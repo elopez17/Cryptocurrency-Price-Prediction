@@ -1,4 +1,4 @@
-FROM tensorflow/tensorflow:latest-gpu-jupyter
+FROM tensorflow/tensorflow:latest-jupyter AS tf
 COPY . /app
-RUN make /app
+RUN make -C /app
 CMD python /app/src/main.py

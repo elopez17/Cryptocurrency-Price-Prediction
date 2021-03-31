@@ -23,4 +23,7 @@ architecture for predicting future Bitcoin prices.
 - Makefile
 - Docker
 
+###### Given Parameters:
+- Data is univariant.
+- Goal is to predict 5 minutes with data at a frequency of 1 minute.
 
