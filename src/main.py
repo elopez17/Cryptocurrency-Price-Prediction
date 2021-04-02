@@ -4,12 +4,12 @@ import numpy as np
 import random
 from collections import deque
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, LSTM, Dropout
+from tensorflow.keras.layers import Dense, LSTM, Dropout, BatchNormalization
 from tensorflow.keras.optimizers import Adam
 
 
 n_steps_in = 60 # one sequence will have 60 elements of data
-n_steps_out = 5 # goal is to predict 5 elements of data 
+n_steps_out = 3 # goal is to predict 5 elements of data 
 
 def is_profit(actual, future):
 	if float(future) > float(actual):
@@ -18,6 +18,7 @@ def is_profit(actual, future):
 
 def preprocess_df(df):
 	df = df.drop(columns='future')
+	df.fillna(method="ffill", inplace=True)
 	df[['close']] = df[['close']].apply(lambda x:(x-x.min()) / (x.max()-x.min()))
 	sequence_list = list()
 	sequence = deque(maxlen=n_steps_in)
@@ -31,9 +32,6 @@ def preprocess_df(df):
 			profit.append([seq, target])
 		elif target == 0:
 			loss.append([seq, target])
-	balance = min(len(profit), len(loss))
-	profit = profit[:balance]
-	loss = loss[:balance]
 	sequence_list = profit + loss
 	random.shuffle(sequence_list)
 	x = list(); y = list()
@@ -64,15 +62,30 @@ test_df = df.loc[df.index >= timestamp.name]
 x_train, y_train = preprocess_df(train_df)
 x_test, y_test = preprocess_df(test_df)
 
+x_train = x_train.reshape(x_train.shape[0], n_steps_in, 1)
+x_test = x_test.reshape(x_test.shape[0], n_steps_in, 1)
+
 # pass data through neural network.
 model = Sequential()
 
-model.add(LSTM(64))
+model.add(LSTM(64, activation="tanh"))
 model.add(Dropout(0.2))
+model.add(BatchNormalization())
+#model.add(LSTM(1, activation="sigmoid"))
+#model.add(Dropout(0.2))
+#model.add(BatchNormalization())
 
+model.add(Dense(16, activation='relu'))
+model.add(Dropout(0.2))
 model.add(Dense(n_steps_out))
 
-opt = Adam(lr=0.005, decay=1e-6)
-model.compile(optimizer=opt, loss='mse', metrics=['accuracy'])
-model.fit(x_train, y_train, epochs=8, verbose=1)
+opt = Adam(lr=0.001, decay=1e-6)
+model.compile(optimizer=opt, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+model.fit(x_train, y_train, epochs=32, verbose=1, validation_data=(x_test, y_test), shuffle=False)
+guess = model.predict(x_test, verbose=1)
+print('prediction: ', guess)
+score = model.evaluate(x_test, y_test, verbose=1)
+print('Test loss:', score[0])
+print('Test accuracy:', score[1])
+
 
