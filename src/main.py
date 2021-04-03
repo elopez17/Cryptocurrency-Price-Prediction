@@ -79,13 +79,12 @@ model.add(Dense(16, activation='relu'))
 model.add(Dropout(0.2))
 model.add(Dense(n_steps_out))
 
-opt = Adam(lr=0.001, decay=1e-6)
+opt = Adam(lr=0.0001, decay=1e-6)
 model.compile(optimizer=opt, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-model.fit(x_train, y_train, epochs=32, verbose=1, validation_data=(x_test, y_test), shuffle=False)
+model.fit(x_train, y_train, epochs=10, verbose=1, validation_data=(x_test, y_test), shuffle=False)
 guess = model.predict(x_test, verbose=1)
 print('prediction: ', guess)
 score = model.evaluate(x_test, y_test, verbose=1)
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
-
 
