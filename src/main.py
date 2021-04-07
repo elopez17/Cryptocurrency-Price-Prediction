@@ -2,6 +2,7 @@ import tensorflow as tf
 import pandas as pd
 import numpy as np
 import random
+import sys
 from collections import deque
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, LSTM, Dropout, BatchNormalization
@@ -19,6 +20,7 @@ def is_profit(actual, future):
 def preprocess_df(df):
 	df = df.drop(columns='future')
 	df.fillna(method="ffill", inplace=True)
+	sys.exit("at B")
 	df[['close']] = df[['close']].apply(lambda x:(x-x.min()) / (x.max()-x.min()))
 	sequence_list = list()
 	sequence = deque(maxlen=n_steps_in)
@@ -48,7 +50,13 @@ df.drop(columns=['open', 'high', 'low', 'volume'], inplace=True)
 
 # create future column, create target/label column
 df['future'] = df['close'].shift(-n_steps_out)
+print(df.tail(5)) # exploring options for handling nan values in Dataframe
+sys.exit()
 df['target'] = list(map(is_profit, df['close'], df['future']))
+print(df.tail(5), "\n")
+for elem in df.columns:
+	print(elem, ' ', pd.isnull(df.iloc[-1][elem]))
+sys.exit()
 
 # split data into train, test sections (70/30) split
 timestamp = df.iloc[-int(df.shape[0] * 0.3)]
@@ -71,9 +79,6 @@ model = Sequential()
 model.add(LSTM(64, activation="tanh"))
 model.add(Dropout(0.2))
 model.add(BatchNormalization())
-#model.add(LSTM(1, activation="sigmoid"))
-#model.add(Dropout(0.2))
-#model.add(BatchNormalization())
 
 model.add(Dense(16, activation='relu'))
 model.add(Dropout(0.2))
